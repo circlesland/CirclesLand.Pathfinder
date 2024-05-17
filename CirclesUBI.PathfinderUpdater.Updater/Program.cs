@@ -13,7 +13,7 @@ public static class Program
     private static readonly HealthMonitor _pathfinderResponseHealth =
         new HealthMonitor("Pathfinder", Config.PathfinderResponseHealthThreshold);
 
-    private static readonly HealthEndpoint HealthEndpoint = new("http://+:8794/", new HealthMonitor[]
+    private static readonly HealthEndpoint HealthEndpoint = new("http://+:8794/", new[]
     {
         _blockUpdateHealth,
         _pathfinderResponseHealth
@@ -24,23 +24,14 @@ public static class Program
     private static Config _config = null!;
     private static Queries _queries = null!;
 
-    // private static bool _isInitialized;
-
     private static long _currentBlock;
     private static long _lastFullUpdate;
-    // private static long _lastIncrementalUpdate;
 
-    private static int _working;
+    private static int _isWorking;
 
     public static async Task Main(string[] args)
     {
         _config = Config.Read(args);
-
-        // if (_config.EnableIncrementalUpdates)
-        // {
-        //     throw new NotSupportedException("The pathfinder2 doesn't support incremental updates yet.");
-        // }
-
         _queries = new Queries(_config.CirclesVersion);
         _pathfinderRpc = new RpcEndpoint(_config.PathfinderUrl);
 
@@ -59,9 +50,9 @@ public static class Program
 
         Logger.Call("On indexer websocket message", async () =>
             {
-                Logger.Log($" _working = {_working}");
+                Logger.Log($" _working = {_isWorking}");
 
-                if (Interlocked.CompareExchange(ref _working, 1, 0) != 0)
+                if (Interlocked.CompareExchange(ref _isWorking, 1, 0) != 0)
                 {
                     Logger.Log($"Still working. Ignore the incoming message.");
                     return;
@@ -76,7 +67,7 @@ public static class Program
                     await OnNewBlock(e.Message.TransactionHashes);
                 }
 
-                Interlocked.Exchange(ref _working, 0);
+                Interlocked.Exchange(ref _isWorking, 0);
             })
             .ContinueWith(result =>
             {
@@ -131,17 +122,7 @@ public static class Program
                 await using var outFileStream =
                     await ExportUtil.Program.ExportToBinaryFile(_config.InternalCapacityGraphPath,
                         _config.IndexerDbConnectionString,
-                        _queries);
-                /*var runtimes = await CapacityGraph.ToBinaryFile(
-                    _config.IndexerDbConnectionString,
-                    _config.InternalCapacityGraphPath);
-
-                Logger.Log($"SQL query took                      {runtimes.queryDuration}");
-                Logger.Log($"Download took                       {runtimes.downloadDuration}");
-                Logger.Log($"Writing the edges took              {runtimes.writeEdgesDuration}");
-                Logger.Log($"Writing the nodes took              {runtimes.writeNodesDuration}");
-                Logger.Log($"Concatenating nodes and edges took  {runtimes.concatDumpFilesDuration}");
-*/
+                        _config.CirclesVersion);
             });
 
             await Logger.Call($"Call 'load_safes_binary' on pathfinder at '{_config.PathfinderUrl}'", async () =>
@@ -156,7 +137,6 @@ public static class Program
             });
 
             _lastFullUpdate = _currentBlock;
-            // _lastIncrementalUpdate = _currentBlock;
 
             Logger.Log($"Pathfinder2 initialized up to block {_lastFullUpdate}");
         });
@@ -164,9 +144,6 @@ public static class Program
 
     private static void OnReorgOccurred()
     {
-        Logger.Call("On reorg (the indexer sent the '0xDEADBEEF..' transaction hash)", () =>
-        {
-            // Logger.Log("isInitialized = false -> Re-initialize on next block.");
-        });
+        Logger.Log("On reorg (the indexer sent the '0xDEADBEEF..' transaction hash)");
     }
 }

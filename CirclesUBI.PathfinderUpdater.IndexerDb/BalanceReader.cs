@@ -1,5 +1,6 @@
 using System.Data;
 using System.Diagnostics;
+using System.Numerics;
 using CirclesUBI.Pathfinder.Models;
 using Npgsql;
 
@@ -15,25 +16,25 @@ public class BalanceReader : IDisposable
     {
         _connection = new NpgsqlConnection(connectionString);
         _connection.Open();
-        
+
         _queryString = queryString;
         _addressIndexes = addressIndexes;
     }
 
-    public async Task<IEnumerable<Balance>> ReadBalances(
+    public async Task<IEnumerable<Balance>> ReadBalances(string version,
         Stopwatch? queryStopWatch = null)
     {
         queryStopWatch?.Start();
-        
-        var cmd = new NpgsqlCommand(_queryString, _connection); 
+
+        var cmd = new NpgsqlCommand(_queryString, _connection);
         var capacityReader = await cmd.ExecuteReaderAsync(CommandBehavior.CloseConnection);
 
         queryStopWatch?.Stop();
-        
-        return CreateBalanceReader(capacityReader);
+
+        return CreateBalanceReader(capacityReader, version);
     }
 
-    private IEnumerable<Balance> CreateBalanceReader(NpgsqlDataReader capacityReader)
+    private IEnumerable<Balance> CreateBalanceReader(NpgsqlDataReader capacityReader, string version)
     {
         while (true)
         {
@@ -44,9 +45,26 @@ public class BalanceReader : IDisposable
             }
 
             var safeAddress = capacityReader.GetString(0).Substring(2);
-            var tokenOwner = capacityReader.GetString(1).Substring(2);
+            string tokenOwnerAddress = "";
+            if (version == "v1")
+            {
+                tokenOwnerAddress = capacityReader.GetString(1).Substring(2);
+            }
+            else if (version == "v2")
+            {
+                var tokenId = capacityReader.GetString(1);
+                var tokenIdBigInt = BigInteger.Parse(tokenId);
+
+                // Convert the 160-bit 'tokenIdBigInt' to an Ethereum address
+                tokenOwnerAddress = tokenIdBigInt.ToString("x").PadLeft(40, '0').Substring(1);
+            }
+            else
+            {
+                throw new Exception("Unknown version");
+            }
+
             if (!_addressIndexes.TryGetValue(safeAddress, out var safeAddressIdx)
-             || !_addressIndexes.TryGetValue(tokenOwner, out var tokenOwnerAddressIdx))
+                || !_addressIndexes.TryGetValue(tokenOwnerAddress, out var tokenOwnerAddressIdx))
             {
                 // Console.WriteLine($"Warning: Ignoring balance of address {safeAddress} with token {tokenOwner}");
                 continue;
