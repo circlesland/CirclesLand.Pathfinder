@@ -1,6 +1,6 @@
 ﻿services:
   pathfinder2:
-    image: circlesubi/pathfinder2:feature-server_only
+    image: jaensen/pathfinder2:server-only
     restart: unless-stopped
     network_mode: host
     volumes:
@@ -12,12 +12,7 @@
       dockerfile: Dockerfile
     restart: unless-stopped
     network_mode: host
-    environment:
-      CIRCLES_VERSION: v2
-      INDEXER_WS_URL: wss://rpc.helsinki.aboutcircles.com/indexer
-      INTERNAL_CAPACITY_GRAPH_PATH: /pathfinder-db/db.bin
-      EXTERNAL_CAPACITY_GRAPH_PATH: /pathfinder-db/db.bin
-      PATHFINDER_RPC_URL: http://localhost:8080
-      INDEXER_DB_CONNECTION_STRING: Server=localhost;Port=5432;Database=postgres;User Id=postgres;Password=postgres;
+    env_file:
+      - .env
     volumes:
       - .state/pathfinder-db:/pathfinder-db
