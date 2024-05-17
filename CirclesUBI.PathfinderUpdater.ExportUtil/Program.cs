@@ -11,16 +11,18 @@ public static class Program
         if (args.Length != 2)
         {
             Console.WriteLine("Usage: ");
-            Console.WriteLine("CirclesUBI.PathfinderUpdater.ExportUtil output_file connection_string");
+            Console.WriteLine("CirclesUBI.PathfinderUpdater.ExportUtil output_file connection_string circles_version");
             Console.WriteLine("   output_file: Where to store the output");
             Console.WriteLine("   connection_string: Connection string to an indexer db");
+            Console.WriteLine("   circles_version: v1 or v2");
             return;
         }
 
         var connectionString = args[1];
         var outFilePath = args[0];
+        var version = args[2];
 
-        var queries = new Queries("v1");
+        var queries = new Queries(version);
 
         await using var outFile = await ExportToBinaryFile(outFilePath, connectionString, queries);
         ValidateData(outFile);
