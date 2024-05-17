@@ -1,7 +1,56 @@
 namespace CirclesUBI.PathfinderUpdater;
 
-public static class Queries
+public class Queries
 {
+    private readonly string _version;
+
+    public Queries(string version)
+    {
+        if (version != "v1" && version != "v2")
+        {
+            throw new ArgumentException("The circles version must be 'v1' or 'v2'.");
+        }
+
+        _version = version;
+    }
+
+    public string BalancesByAccountAndToken =>
+        _version == "v1" ? V1BalancesByAccountAndToken : V2BalancesByAccountAndToken;
+
+    public const string V1BalancesByAccountAndToken = @"
+        select safe_address, token_owner, balance::text
+        from cache_crc_balances_by_safe_and_token
+        where safe_address != '0x0000000000000000000000000000000000000000'
+        and balance > 0;
+    ";
+
+    public string TrustEdges => _version == "v1" ? V1TrustEdges : V2TrustEdges;
+
+    public const string V1TrustEdges = @"
+        select ""user"", ""can_send_to"", ""limit""
+        from cache_crc_current_trust;
+    ";
+
+    public string Accounts => _version == "v1" ? V1Accounts : V2Accounts;
+
+    public const string V1Accounts = @"
+        select ""user"", ""token""
+        from crc_all_signups;
+    ";
+
+    public string BlockByTransactionHash(string txHash) =>
+        _version == "v1" ? V1BlockByTransactionHash(txHash) : V2BlockByTransactionHash(txHash);
+
+    public static string V1BlockByTransactionHash(string txHash)
+    {
+        if (!System.Text.RegularExpressions.Regex.IsMatch(txHash, "0x[0-9a-fA-F]{64}"))
+        {
+            throw new ArgumentException("Invalid transaction hash format.");
+        }
+
+        return $"select block_number from transaction_2 where hash = '{txHash}';";
+    }
+
     public const string V2TrustEdges = @"
     -- Get a snapshot of all active (v2) trust relations:
     --
@@ -71,26 +120,11 @@ public static class Queries
     )
     select ""to"" as account, id as token_id, sum(value) as total_balance
     from ""orderedTransfers""
-    group by ""to"", id;
+       where ""to"" != '0x0000000000000000000000000000000000000000'
+    group by ""to"", id
+    having sum(value) > 0;
     ";
 
-
-    public const string V1BalancesByAccountAndToken = @"
-        select safe_address, token_owner, balance::text
-        from cache_crc_balances_by_safe_and_token
-        where safe_address != '0x0000000000000000000000000000000000000000'
-        and balance > 0;
-    ";
-
-    public const string V1TrustEdges = @"
-        select ""user"", ""can_send_to"", ""limit""
-        from cache_crc_current_trust;
-    ";
-
-    public const string V1Accounts = @"
-        select ""user"", ""token""
-        from crc_all_signups;
-    ";
 
     public const string V2Accounts = @"
     with all_signups as (select avatar ""user"", avatar ""token""
@@ -108,15 +142,6 @@ public static class Queries
     from all_signups;
     ";
 
-    public static string V1BlockByTransactionHash(string txHash)
-    {
-        if (!System.Text.RegularExpressions.Regex.IsMatch(txHash, "0x[0-9a-fA-F]{64}"))
-        {
-            throw new ArgumentException("Invalid transaction hash format.");
-        }
-
-        return $"select block_number from transaction_2 where hash = '{txHash}';";
-    }
 
     public static string V2BlockByTransactionHash(string txHash)
     {

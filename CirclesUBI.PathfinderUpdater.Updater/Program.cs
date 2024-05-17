@@ -22,6 +22,7 @@ public static class Program
     private static IndexerSubscription? _indexerSubscription;
     private static RpcEndpoint _pathfinderRpc = null!;
     private static Config _config = null!;
+    private static Queries _queries = null!;
 
     // private static bool _isInitialized;
 
@@ -40,6 +41,7 @@ public static class Program
         //     throw new NotSupportedException("The pathfinder2 doesn't support incremental updates yet.");
         // }
 
+        _queries = new Queries(_config.CirclesVersion);
         _pathfinderRpc = new RpcEndpoint(_config.PathfinderUrl);
 
         _indexerSubscription = new IndexerSubscription(_config.IndexerWebsocketUrl);
@@ -110,7 +112,8 @@ public static class Program
             {
                 _currentBlock = await Block.FindByTransactionHash(
                     _config.IndexerDbConnectionString,
-                    transactionHashes[0]);
+                    transactionHashes[0],
+                    _queries);
 
                 Logger.Log($"Block No.: {_currentBlock}");
             });
@@ -127,7 +130,8 @@ public static class Program
             {
                 await using var outFileStream =
                     await ExportUtil.Program.ExportToBinaryFile(_config.InternalCapacityGraphPath,
-                        _config.IndexerDbConnectionString);
+                        _config.IndexerDbConnectionString,
+                        _queries);
                 /*var runtimes = await CapacityGraph.ToBinaryFile(
                     _config.IndexerDbConnectionString,
                     _config.InternalCapacityGraphPath);
@@ -165,40 +169,4 @@ public static class Program
             // Logger.Log("isInitialized = false -> Re-initialize on next block.");
         });
     }
-
-//     private static async Task OnIncrementalUpdate()
-//     {
-//         await Logger.Call("On incremental update", async () =>
-//         {
-//             Logger.Log($"Last incremental update at block: {_lastIncrementalUpdate}");
-//             Logger.Log($"Current block:                    {_lastIncrementalUpdate}");
-//
-//             var updateSinceBlock = _lastIncrementalUpdate + 1;
-//             IEnumerable<IncrementalExportRow> rows = new IncrementalExportRow[]{};
-//             
-//              await Logger.Call($"Load changes since block {updateSinceBlock}", async () =>
-//              {
-//                  var edgeReaderResult = await CapacityGraph.SinceBlock(
-//                      _config.IndexerDbConnectionString, 
-//                      updateSinceBlock);
-//                  
-//                  rows = edgeReaderResult.result;
-//
-//                  Logger.Log($"SQL query took {edgeReaderResult.queryDuration}");
-//                  Logger.Log($"Download took  {edgeReaderResult.downloadDuration}");
-//              });
-// // TODO: Re-implement live updates
-// /*
-//              await Logger.Call($"Call 'update_edges' on pathfinder at '{_config.PathfinderUrl}'", async () =>
-//              {
-//                  var callResult = await _pathfinderRpc.Call(RpcCalls.UpdateEdges(rows));
-//
-//                  Logger.Log("Response body: ");
-//                  Logger.Log(callResult.resultBody);
-//
-//                  _lastIncrementalUpdate = _currentBlock;
-//              });
-// */
-//         });
-//     }
 }

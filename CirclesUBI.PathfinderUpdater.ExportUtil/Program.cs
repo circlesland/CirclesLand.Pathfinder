@@ -20,11 +20,14 @@ public static class Program
         var connectionString = args[1];
         var outFilePath = args[0];
 
-        await using var outFile = await ExportToBinaryFile(outFilePath, connectionString);
+        var queries = new Queries("v1");
+
+        await using var outFile = await ExportToBinaryFile(outFilePath, connectionString, queries);
         ValidateData(outFile);
     }
 
-    public static async Task<FileStream> ExportToBinaryFile(string outFilePath, string connectionString)
+    public static async Task<FileStream> ExportToBinaryFile(string outFilePath, string connectionString,
+        Queries queries)
     {
         var usersFilePath = Path.GetTempFileName();
         var orgsFilePath = Path.GetTempFileName();
@@ -32,7 +35,7 @@ public static class Program
         var balancesFilePath = Path.GetTempFileName();
 
         Console.WriteLine($"Reading users and orgs ..");
-        using var u = new Users(connectionString, Queries.V1Accounts);
+        using var u = new Users(connectionString, queries.Accounts);
         await u.Read();
 
         Console.WriteLine($"Writing users ..");
@@ -53,7 +56,7 @@ public static class Program
 
         Console.WriteLine($"Reading trusts ..");
         await using var trustsFile = File.Create(trustsFilePath);
-        using var t = new TrustReader(connectionString, Queries.V1TrustEdges, u.UserAddressIndexes);
+        using var t = new TrustReader(connectionString, queries.TrustEdges, u.UserAddressIndexes);
         var trustReader = await t.ReadTrustEdges();
         uint edgeCounter = 0;
         Console.WriteLine($"Writing trusts ..");
@@ -69,7 +72,7 @@ public static class Program
 
         Console.WriteLine($"Reading balances ..");
         await using var balancesFile = File.Create(balancesFilePath);
-        using var b = new BalanceReader(connectionString, Queries.V1BalancesByAccountAndToken, u.UserAddressIndexes);
+        using var b = new BalanceReader(connectionString, queries.BalancesByAccountAndToken, u.UserAddressIndexes);
         var balanceReader = await b.ReadBalances();
         Console.WriteLine($"Writing balances ..");
         uint balanceCounter = 0;
@@ -109,7 +112,7 @@ public static class Program
 
         outFileStream.Flush();
         outFileStream.Position = 0;
-        
+
         return outFileStream;
     }
 
@@ -117,21 +120,21 @@ public static class Program
     {
         /*
         {
-           addressCount: uint32  
-           addresses: byte[20][] 
+           addressCount: uint32
+           addresses: byte[20][]
            organizationsCount: uint32
            organizations: uint32[]
            trustEdgesCount: uint32
            trustEdges: {
-              userAddress: uint32 
-              canSendToAddress: uint32 
-              limit: byte   
+              userAddress: uint32
+              canSendToAddress: uint32
+              limit: byte
            }[]
            balancesCount: uint32
            balances: {
-              userAddress: uint32  
-              tokenOwnerAddress: uint32  
-              balance: uint256 
+              userAddress: uint32
+              tokenOwnerAddress: uint32
+              balance: uint256
            }[]
         }
          */
@@ -160,7 +163,7 @@ public static class Program
         var balanceCount = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(buffer));
         var readBalanceCount = 0;
         var balanceSectionEnd = trustSectionEnd + 4;
-        
+
         var headerBuffer = new byte[9];
         while (true)
         {
@@ -169,7 +172,8 @@ public static class Program
                 break;
             }
 
-            var balanceHolder = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(new ReadOnlySpan<byte>(headerBuffer, 0, 4)));
+            var balanceHolder =
+                BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(new ReadOnlySpan<byte>(headerBuffer, 0, 4)));
             var pos = fileStream.Position;
             fileStream.Position = 4 + balanceHolder * 20;
             var balanceHolderAddressBuffer = new byte[20];
@@ -177,7 +181,8 @@ public static class Program
             var balanceHolderAddress = Convert.ToHexString(balanceHolderAddressBuffer);
             fileStream.Position = pos;
 
-            var tokenOwner = BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(new ReadOnlySpan<byte>(headerBuffer, 4, 4)));
+            var tokenOwner =
+                BinaryPrimitives.ReverseEndianness(BitConverter.ToUInt32(new ReadOnlySpan<byte>(headerBuffer, 4, 4)));
             pos = fileStream.Position;
             fileStream.Position = 4 + tokenOwner * 20;
             var tokenOwnerAddressBuffer = new byte[20];
@@ -188,20 +193,21 @@ public static class Program
             var balanceFieldLength = new ReadOnlySpan<byte>(headerBuffer, 8, 1)[0];
             var balanceFieldBuffer = new byte[balanceFieldLength];
             Debug.Assert(fileStream.Read(balanceFieldBuffer) == balanceFieldBuffer.Length);
-            
+
             var balance = new BigInteger(balanceFieldBuffer, true, true);
             Console.WriteLine($"{balanceHolderAddress};{tokenOwnerAddress};{balance}");
 
             balanceSectionEnd += (uint)(headerBuffer.Length + balanceFieldBuffer.Length);
             readBalanceCount++;
         }
-        
+
         Debug.Assert(readBalanceCount == balanceCount);
 
         Console.WriteLine($"Balance section of file is from {trustSectionEnd} to {balanceSectionEnd}");
         Debug.Assert(balanceSectionEnd == fileStream.Length);
-        
-        Console.WriteLine($"File length is {fileStream.Length}. Read bytes are: {balanceSectionEnd} File seems to be {(fileStream.Length == balanceSectionEnd ? "o.k." : "not o.k.")}");
+
+        Console.WriteLine(
+            $"File length is {fileStream.Length}. Read bytes are: {balanceSectionEnd} File seems to be {(fileStream.Length == balanceSectionEnd ? "o.k." : "not o.k.")}");
         fileStream.Position = 0;
     }
 }
