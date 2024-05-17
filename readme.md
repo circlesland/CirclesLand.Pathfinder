@@ -18,6 +18,7 @@ docker run \
   -v "${HOME}/.pathfinder2:/var/pathfinder2/data" \
   --rm \
   circlesubi/pathfinder2-updater:dev \
+  "v1"
   "Server={server};Port={port};Database=indexer;User ID={username};Password={password};Command Timeout=240" \
   ws://localhost:8675 \
   "/var/pathfinder2/data/capacity_graph.db" \
@@ -27,11 +28,15 @@ docker run \
 
 where the command line parameters are:
 
+Docker arguments:  
 [0]: use the host network (to reach the previously started pathfinder2)  
 [1]: use a volume that's accessible to the pathfinder2  
 [2]: delete the container after it's stopped  
 [3]: the image to run  
-[4]: indexer db connection string (see: https://github.com/circlesland/blockchain-indexer)    
-[5]: indexer websocket endpoint (see: https://github.com/circlesland/blockchain-indexer)  
-[6]: filesystem path where the initial capacity graph dump should be stored (pathfinder2 needs read access so this has to be a volume)    
-[7]: http json-rpc endpoint of pathfinder2 (see: https://github.com/chriseth/pathfinder2)
+
+Pathfinder2-updater arguments:
+[4]: Which circles version to use (v1 or v2)
+[5]: indexer db connection string (see: https://github.com/circlesland/blockchain-indexer)    
+[6]: indexer websocket endpoint (see: https://github.com/circlesland/blockchain-indexer)  
+[7]: filesystem path where the initial capacity graph dump should be stored (pathfinder2 needs read access so this has to be a volume)    
+[8]: http json-rpc endpoint of pathfinder2 (see: https://github.com/chriseth/pathfinder2)
