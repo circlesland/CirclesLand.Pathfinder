@@ -56,14 +56,13 @@ public class BalanceReader : IDisposable
                 var tokenIdBigInt = BigInteger.Parse(tokenId);
 
                 // Convert the 160-bit 'tokenIdBigInt' to an Ethereum address
-                tokenOwnerAddress = tokenIdBigInt.ToString("x").PadLeft(40, '0');
+                tokenOwnerAddress = tokenIdBigInt.ToString("x").PadLeft(40, '0').Substring(1);
             }
             else
             {
                 throw new Exception("Unknown version");
             }
 
-            // var tokenOwner = capacityReader.GetString(1).Substring(2);
             if (!_addressIndexes.TryGetValue(safeAddress, out var safeAddressIdx)
                 || !_addressIndexes.TryGetValue(tokenOwnerAddress, out var tokenOwnerAddressIdx))
             {

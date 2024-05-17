@@ -9,7 +9,8 @@ public static class Block
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
         
-        var cmd = new NpgsqlCommand(queries.BlockByTransactionHash(transactionHash), connection);
+        // var cmd = new NpgsqlCommand(queries.BlockByTransactionHash(transactionHash), connection);
+        var cmd = new NpgsqlCommand(queries.LatestBlockNumber, connection);
         return (long)(await cmd.ExecuteScalarAsync() 
                       ?? throw new InvalidOperationException(
                           "Couldn't find a block that contains the supplied transaction or an other error occurred."));

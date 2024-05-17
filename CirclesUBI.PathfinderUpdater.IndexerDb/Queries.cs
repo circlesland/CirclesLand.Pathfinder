@@ -38,18 +38,11 @@ public class Queries
         from crc_all_signups;
     ";
 
-    public string BlockByTransactionHash(string txHash) =>
-        _version == "v1" ? V1BlockByTransactionHash(txHash) : V2BlockByTransactionHash(txHash);
-
-    public static string V1BlockByTransactionHash(string txHash)
-    {
-        if (!System.Text.RegularExpressions.Regex.IsMatch(txHash, "0x[0-9a-fA-F]{64}"))
-        {
-            throw new ArgumentException("Invalid transaction hash format.");
-        }
-
-        return $"select block_number from transaction_2 where hash = '{txHash}';";
-    }
+    public string LatestBlockNumber => _version == "v1" ? V1LatestBlockNumber : V2LatestBlockNumber;
+    
+    public const string V1LatestBlockNumber = "select max(block_number) from transaction_2;";
+    
+    public const string V2LatestBlockNumber = "select max(\"blockNumber\") from \"System_Block\";";
 
     public const string V2TrustEdges = @"
     -- Get a snapshot of all active (v2) trust relations:
@@ -118,7 +111,7 @@ public class Queries
         from transfers
         order by ""blockNumber"", ""transactionIndex"", ""logIndex"", ""batchIndex""   
     )
-    select ""to"" as account, id::text as token_id, sum(value) as total_balance
+    select ""to"" as account, id::text as token_id, sum(value)::text as total_balance
     from ""orderedTransfers""
        where ""to"" != '0x0000000000000000000000000000000000000000'
     group by ""to"", id
