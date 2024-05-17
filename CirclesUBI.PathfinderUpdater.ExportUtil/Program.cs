@@ -32,7 +32,7 @@ public static class Program
         var balancesFilePath = Path.GetTempFileName();
 
         Console.WriteLine($"Reading users and orgs ..");
-        using var u = new Users(connectionString, Queries.Users);
+        using var u = new Users(connectionString, Queries.V1Accounts);
         await u.Read();
 
         Console.WriteLine($"Writing users ..");
@@ -53,7 +53,7 @@ public static class Program
 
         Console.WriteLine($"Reading trusts ..");
         await using var trustsFile = File.Create(trustsFilePath);
-        using var t = new TrustReader(connectionString, Queries.TrustEdges, u.UserAddressIndexes);
+        using var t = new TrustReader(connectionString, Queries.V1TrustEdges, u.UserAddressIndexes);
         var trustReader = await t.ReadTrustEdges();
         uint edgeCounter = 0;
         Console.WriteLine($"Writing trusts ..");
@@ -69,7 +69,7 @@ public static class Program
 
         Console.WriteLine($"Reading balances ..");
         await using var balancesFile = File.Create(balancesFilePath);
-        using var b = new BalanceReader(connectionString, Queries.BalancesBySafeAndToken, u.UserAddressIndexes);
+        using var b = new BalanceReader(connectionString, Queries.V1BalancesByAccountAndToken, u.UserAddressIndexes);
         var balanceReader = await b.ReadBalances();
         Console.WriteLine($"Writing balances ..");
         uint balanceCounter = 0;

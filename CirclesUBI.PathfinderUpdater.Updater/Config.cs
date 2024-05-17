@@ -37,27 +37,27 @@ public class Config
     /// <summary>
     /// Uses 'update_edges' and only applies the delta when set to 'true'.
     /// </summary>
-    public bool EnableIncrementalUpdates { get; }
+    // public bool EnableIncrementalUpdates { get; }
 
     private Config(string indexerDbConnectionString
         , string indexerWebsocketUrl
         , string internalCapacityGraphPath
         , string externalCapacityGraphPath
         , string pathfinderUrl
-        , bool enableIncrementalUpdates)
+        /*, bool enableIncrementalUpdates*/)
     {
         IndexerDbConnectionString = indexerDbConnectionString;
         IndexerWebsocketUrl = indexerWebsocketUrl;
         InternalCapacityGraphPath = internalCapacityGraphPath;
         ExternalCapacityGraphPath = externalCapacityGraphPath;
         PathfinderUrl = pathfinderUrl;
-        EnableIncrementalUpdates = enableIncrementalUpdates;
+        // EnableIncrementalUpdates = enableIncrementalUpdates;
 
         Console.WriteLine($"IndexerWebsocketUrl={IndexerWebsocketUrl}");
         Console.WriteLine($"InternalCapacityGraphPath={InternalCapacityGraphPath}");
         Console.WriteLine($"ExternalCapacityGraphPath={ExternalCapacityGraphPath}");
         Console.WriteLine($"PathfinderUrl={PathfinderUrl}");
-        Console.WriteLine($"EnableIncrementalUpdates={EnableIncrementalUpdates}");
+        // Console.WriteLine($"EnableIncrementalUpdates={EnableIncrementalUpdates}");
         var c = new NpgsqlConnectionStringBuilder(IndexerDbConnectionString);
         Console.WriteLine($"IndexerDbConnectionString=(Host: {c.Host}; User: {c.Username}; Database: {c.Database})");
     }
@@ -75,7 +75,7 @@ public class Config
                 , Environment.GetEnvironmentVariable("INTERNAL_CAPACITY_GRAPH_PATH") ?? ""
                 , Environment.GetEnvironmentVariable("EXTERNAL_CAPACITY_GRAPH_PATH") ?? ""
                 , Environment.GetEnvironmentVariable("PATHFINDER_RPC_URL") ?? ""
-                , Environment.GetEnvironmentVariable("ENABLE_INCREMENTAL_UPDATES") != null);
+                /*, Environment.GetEnvironmentVariable("ENABLE_INCREMENTAL_UPDATES") != null*/);
         }
 
         if (args.Length == 5 || args.Length == 6)
@@ -86,7 +86,7 @@ public class Config
                 , args[2]
                 , args[3]
                 , args[4]
-                , args.Length == 6);
+                /*, args.Length == 6*/);
         }
 
         if (config == null
@@ -105,7 +105,7 @@ public class Config
             Console.WriteLine(
                 $"  arg 3: The location where the pathfinder2 can find the capacity graph binary (e.g. outside of a docker container)");
             Console.WriteLine($"  arg 4: The URL to the running pathfinder2 json rpc interface");
-            Console.WriteLine($"  arg 5: OPTIONAL. Enables the incremental updates if any value is supplied.");
+            //Console.WriteLine($"  arg 5: OPTIONAL. Enables the incremental updates if any value is supplied.");
             Console.WriteLine("");
             Console.WriteLine(
                 "Alternatively you can use the following environment variables to configure the service:");
@@ -114,7 +114,7 @@ public class Config
             Console.WriteLine("   INTERNAL_CAPACITY_GRAPH_PATH");
             Console.WriteLine("   EXTERNAL_CAPACITY_GRAPH_PATH");
             Console.WriteLine("   PATHFINDER_RPC_URL");
-            Console.WriteLine("   ENABLE_INCREMENTAL_UPDATES");
+            //Console.WriteLine("   ENABLE_INCREMENTAL_UPDATES");
 
             throw new Exception("Couldn't parse all parameters.");
         }
