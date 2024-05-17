@@ -8,7 +8,7 @@ public static class Program
 {
     public static async Task Main(string[] args)
     {
-        if (args.Length != 2)
+        if (args.Length != 3)
         {
             Console.WriteLine("Usage: ");
             Console.WriteLine("CirclesUBI.PathfinderUpdater.ExportUtil output_file connection_string circles_version");
@@ -22,15 +22,15 @@ public static class Program
         var outFilePath = args[0];
         var version = args[2];
 
-        var queries = new Queries(version);
 
-        await using var outFile = await ExportToBinaryFile(outFilePath, connectionString, queries);
+        await using var outFile = await ExportToBinaryFile(outFilePath, connectionString, version);
         ValidateData(outFile);
     }
 
     public static async Task<FileStream> ExportToBinaryFile(string outFilePath, string connectionString,
-        Queries queries)
+        string version)
     {
+        var queries = new Queries(version);
         var usersFilePath = Path.GetTempFileName();
         var orgsFilePath = Path.GetTempFileName();
         var trustsFilePath = Path.GetTempFileName();
@@ -75,7 +75,7 @@ public static class Program
         Console.WriteLine($"Reading balances ..");
         await using var balancesFile = File.Create(balancesFilePath);
         using var b = new BalanceReader(connectionString, queries.BalancesByAccountAndToken, u.UserAddressIndexes);
-        var balanceReader = await b.ReadBalances();
+        var balanceReader = await b.ReadBalances(version);
         Console.WriteLine($"Writing balances ..");
         uint balanceCounter = 0;
         balancesFile.Write(BitConverter.GetBytes((uint)BinaryPrimitives.ReverseEndianness(0)));

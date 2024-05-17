@@ -118,7 +118,7 @@ public class Queries
         from transfers
         order by ""blockNumber"", ""transactionIndex"", ""logIndex"", ""batchIndex""   
     )
-    select ""to"" as account, id as token_id, sum(value) as total_balance
+    select ""to"" as account, id::text as token_id, sum(value) as total_balance
     from ""orderedTransfers""
        where ""to"" != '0x0000000000000000000000000000000000000000'
     group by ""to"", id
