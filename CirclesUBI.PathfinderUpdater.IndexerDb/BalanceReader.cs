@@ -74,13 +74,13 @@ public class BalanceReader : IDisposable
                 || !_addressIndexes.TryGetValue(tokenOwnerAddress, out var tokenOwnerAddressIdx))
             {
                 Console.WriteLine(
-                    $"Ignoring: Holder: {safeAddress}; Token {tokenOwnerAddress}; Balance: {balanceBn};  because it is not in the trust graph.");
+                    $"Ignoring balance of holder: {safeAddress}; Token {tokenOwnerAddress}; Balance: {balanceBn};  because the holder can't be found in the _addressIndexes.");
                 continue;
             }
-            else
-            {
-                Console.WriteLine($"Holder: {safeAddress}; Token: {tokenOwnerAddress}; Balance: {balanceBn}");
-            }
+            // else
+            // {
+            //      Console.WriteLine($"Holder: {safeAddress}; Token: {tokenOwnerAddress}; Balance: {balanceBn}");
+            // }
 
             yield return new Balance(safeAddressIdx, tokenOwnerAddressIdx, balanceBn);
         }
