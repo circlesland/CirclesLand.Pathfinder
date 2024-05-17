@@ -9,7 +9,7 @@ the [circles-nethermind-plugin](https://github.com/CirclesUBI/circles-nethermind
 
 ### Configure
 
-Create a `.env` file in the root of the repository and your connection string.
+Create a `.env` file in the root of the repository and add your connection string.
 Also specify the version of the circles implementation you want to use.
 
 ```
@@ -33,7 +33,10 @@ The pathfinder loads the dump on `load_safes_binary` rpc call.
 
 The updater depends on the following services:
 
-* A running [pathfinder2](https://github.com/chriseth/pathfinder2#using-the-server) instance listening to json-rpc requests
-* A running [blockchain-indexer](https://github.com/circlesland/blockchain-indexer) instance that announces new transactions via websocket  
-  ... or a running Nethermind node with [circles-nethermind-plugin](https://github.com/CirclesUBI/circles-nethermind-plugin) for v2 support
+* A running [pathfinder2](https://github.com/chriseth/pathfinder2#using-the-server) instance listening to json-rpc
+  requests
+* A running [blockchain-indexer](https://github.com/circlesland/blockchain-indexer) instance that announces new
+  transactions via websocket  
+  ... or a running Nethermind node
+  with [circles-nethermind-plugin](https://github.com/CirclesUBI/circles-nethermind-plugin) for v2 support
 * A postgres db that contains the indexer data

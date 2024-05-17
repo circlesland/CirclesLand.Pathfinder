@@ -45,6 +45,8 @@ public class BalanceReader : IDisposable
             }
 
             var safeAddress = capacityReader.GetString(0).Substring(2);
+            var balance = capacityReader.GetString(2);
+            var balanceBn = CapacityEdgeReader.ParsePgBigInt(balance);
             string tokenOwnerAddress = "";
             if (version == "v1")
             {
@@ -56,7 +58,12 @@ public class BalanceReader : IDisposable
                 var tokenIdBigInt = BigInteger.Parse(tokenId);
 
                 // Convert the 160-bit 'tokenIdBigInt' to an Ethereum address
-                tokenOwnerAddress = tokenIdBigInt.ToString("x").PadLeft(40, '0').Substring(1);
+                tokenOwnerAddress = tokenIdBigInt.ToString("x").PadLeft(40, '0');
+                if (tokenOwnerAddress.Length > 40)
+                {
+                    var startIndex = tokenOwnerAddress.Length - 40;
+                    tokenOwnerAddress = tokenOwnerAddress.Substring(startIndex);
+                }
             }
             else
             {
@@ -66,12 +73,14 @@ public class BalanceReader : IDisposable
             if (!_addressIndexes.TryGetValue(safeAddress, out var safeAddressIdx)
                 || !_addressIndexes.TryGetValue(tokenOwnerAddress, out var tokenOwnerAddressIdx))
             {
-                // Console.WriteLine($"Warning: Ignoring balance of address {safeAddress} with token {tokenOwner}");
+                Console.WriteLine(
+                    $"Ignoring balance of holder: {safeAddress}; Token {tokenOwnerAddress}; Balance: {balanceBn};  because the holder can't be found in the _addressIndexes.");
                 continue;
             }
-
-            var balance = capacityReader.GetString(2);
-            var balanceBn = CapacityEdgeReader.ParsePgBigInt(balance);
+            // else
+            // {
+            //      Console.WriteLine($"Holder: {safeAddress}; Token: {tokenOwnerAddress}; Balance: {balanceBn}");
+            // }
 
             yield return new Balance(safeAddressIdx, tokenOwnerAddressIdx, balanceBn);
         }

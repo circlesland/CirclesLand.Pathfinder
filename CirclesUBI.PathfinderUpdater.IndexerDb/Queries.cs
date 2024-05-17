@@ -113,7 +113,15 @@ public class Queries
     )
     select ""to"" as account, id::text as token_id, sum(value)::text as total_balance
     from ""orderedTransfers""
+    left join ""CrcV2_RegisterHuman"" hum on hum.avatar = ""to""
+    left join ""CrcV2_InviteHuman"" hum2 on hum2.invited = ""to""
+    left join ""CrcV2_RegisterOrganization"" org on org.""organization"" = ""to""
+    left join ""CrcV2_RegisterGroup"" grp on grp.""group"" = ""to""
        where ""to"" != '0x0000000000000000000000000000000000000000'
+         and (hum.avatar is not null 
+              or hum2.invited is not null 
+              or org.organization is not null 
+              or grp.group is not null) 
     group by ""to"", id
     having sum(value) > 0;
     ";
