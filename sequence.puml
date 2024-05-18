@@ -1,0 +1,29 @@
+﻿@startuml
+actor User
+
+participant "blockchain-indexer" as BI
+participant "index db" as DB
+participant "pathfinder2-updater" as PU
+participant "pathfinder2 instance" as PI
+
+User -> PU: Start docker-compose up
+activate PU
+
+PU -> BI: Subscribe to new block events
+activate BI
+
+BI -> PU: Notify new block event
+activate PU
+
+PU -> DB: Query trust graph and balances
+activate DB
+DB -> PU: Return trust graph and balances
+deactivate DB
+
+PU -> PU: Generate binary dump
+PU -> PI: Send binary dump
+
+deactivate PU
+deactivate PI
+
+@enduml

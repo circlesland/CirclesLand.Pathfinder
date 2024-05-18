@@ -1,21 +1,56 @@
 # pathfinder2-updater
 
+The pathfinder2-updater is a service that queries the trust graph and balances from an index db and sends a binary
+dump of that data to the pathfinder2 instance whenever a new block is indexed.
+
+![Sequence diagram](sequence.png "Sequence diagram")
+
+## Requirements
+
+* To use the pathfinder with v1 events you need to have a
+  running [blockchain-indexer](https://github.com/CirclesUBI/blockchain-indexer) instance with corresponding index db.
+* To use the pathfinder with v2 events you need to have a Nethermind node
+  with [circles-nethermind-plugin](https://github.com/CirclesUBI/circles-nethermind-plugin) installed and corresponding
+  index db.
+
+_In every case you need to have a [blockchain-indexer](https://github.com/CirclesUBI/blockchain-indexer) instance for
+the updater to subscribe to new block events (its used merely as a trigger, the actual data is queried from the
+indexer db). This is about to change in newer versions._
+
 ## Quickstart
 
 The repository contains a docker-compose file that starts a pathfinder2 instance and the pathfinder2-updater.
 It requires a connection string to a postgres db that contains the indexer data.
-The db for v1 is from the [blockchain-indexer](https://github.com/CirclesUBI/blockchain-indexer) and for v2 from
-the [circles-nethermind-plugin](https://github.com/CirclesUBI/circles-nethermind-plugin).
 
 ### Configure
 
-Create a `.env` file in the root of the repository and add your connection string.
+Change the contents of the `.env` file in the root of the repository to your needs.
 Also specify the version of the circles implementation you want to use.
 
 ```
-INDEXER_DB_CONNECTION_STRING=Server=localhost;Port=5432;Database=postgres;User Id={user};Password={password};
-CIRCLES_VERSION=v1 # or v2
+# Which Cirlces version to use (v1 or v2)
+CIRCLES_VERSION=v2
+
+# The connection string to the blokchain-indexer db (v1) or the nethermind plugin db (v2)
+INDEXER_DB_CONNECTION_STRING="Server=localhost;Port=5432;Database=postgres;User Id=postgres;Password=postgres;"
+
+# The websocket url of the blokchain-indexer (v1). Used solely as trigger for the updater (on new block).
+INDEXER_WS_URL=wss://rpc.helsinki.aboutcircles.com/indexer
+
+# The path used by the updater to write the binary dump
+INTERNAL_CAPACITY_GRAPH_PATH=/pathfinder-db/db.bin
+
+# The path used by the pathfinder2 to read the binary dump (used in the load_safes_binary rpc call)
+EXTERNAL_CAPACITY_GRAPH_PATH=/pathfinder-db/db.bin
+
+# The url of the pathfinder2 instance
+PATHFINDER_RPC_URL=http://localhost:8080
 ```
+
+_Note: The internal and external paths are used to share the binary dump between the two services.
+Each service can have the pathfinder-db volume mounted to a different location so its necessary to specify
+the path used by the updater and the path used by the pathfinder2. In this example they are mounted to the same
+locations._
 
 ### Start the environment
 
@@ -24,19 +59,3 @@ On first start, it pulls the pathfinder2 image and builds the pathfinder2-update
 ```shell
 docker-compose up
 ```
-
-When running, the pathfinder2-updater will query the trust graph and balances from the index db and send
-a binary dump of that data to the pathfinder2 instance. The two services share a volume where the dump is stored.
-The pathfinder loads the dump on `load_safes_binary` rpc call.
-
-### Dependencies
-
-The updater depends on the following services:
-
-* A running [pathfinder2](https://github.com/chriseth/pathfinder2#using-the-server) instance listening to json-rpc
-  requests
-* A running [blockchain-indexer](https://github.com/circlesland/blockchain-indexer) instance that announces new
-  transactions via websocket  
-  ... or a running Nethermind node
-  with [circles-nethermind-plugin](https://github.com/CirclesUBI/circles-nethermind-plugin) for v2 support
-* A postgres db that contains the indexer data
