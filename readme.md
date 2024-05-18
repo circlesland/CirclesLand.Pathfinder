@@ -1,6 +1,6 @@
 # pathfinder2-updater
 
-The pathfinder2-updater is a service that queries the trust graph and balances from an index db and sends a binary
+The pathfinder2-updater is a service that queries the Circles trust graph and balances from an index db and sends a binary
 dump of that data to the pathfinder2 instance whenever a new block is indexed.
 
 ![Sequence diagram](sequence.png "Sequence diagram")
@@ -59,3 +59,36 @@ On first start, it pulls the pathfinder2 image and builds the pathfinder2-update
 ```shell
 docker-compose up
 ```
+
+### Use as command line utility
+
+Alternatively, you can use the updater as a command line utility.
+This allows you to dump the index db data to a file and load it into the pathfinder2 instance manually.
+
+```shell
+CirclesUBI.PathfinderUpdater.ExportUtil.exe \
+  "/home/user/pathfinder-db.bin" \
+  "Server=localhost;Port=5432;Database=postgres;User Id=postgres;Password=postgres;" \
+  "v2"
+```
+
+The first argument is the output path for the binary dump file, the second argument is the connection string to the
+index db and the third argument is the Circles version.
+
+You can then use the resulting file to initialize a pathfinder2 instance:
+
+```shell
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "timestamp_value",
+    "method": "load_safes_binary",
+    "params": {
+        "file": "/home/user/pathfinder-db.bin"
+    }
+}' \
+  "http://<ip>:<port>"
+```
+
+## File format
+The binary file format is described in the [Pathfinder Reloaded](https://hackmd.io/Gg04t7gjQKeDW2Q6Jchp0Q#load_safes_binaryfile-ltpathgt) document.
