@@ -1,7 +1,7 @@
 # pathfinder2-updater
 
 The pathfinder2-updater is a service that queries the Circles trust graph and balances from an index db and sends a binary
-dump of that data to the pathfinder2 instance whenever a new block is indexed.
+dump of that data to the [pathfinder2](https://github.com/CirclesUBI/pathfinder2) instance whenever a new block is indexed.
 
 ![Sequence diagram](sequence.png "Sequence diagram")
 
