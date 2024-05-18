@@ -54,7 +54,7 @@ locations._
 
 ### Start the environment
 
-On first start, it pulls the pathfinder2 image and builds the pathfinder2-updater image.
+On first start, it pulls the pathfinder2 image and builds the pathfinder2-updater image from source.
 
 ```shell
 docker-compose up
@@ -66,16 +66,28 @@ Alternatively, you can use the updater as a command line utility.
 This allows you to dump the index db data to a file and load it into the pathfinder2 instance manually.
 
 ```shell
-CirclesUBI.PathfinderUpdater.ExportUtil.exe \
-  "/home/user/pathfinder-db.bin" \
-  "Server=localhost;Port=5432;Database=postgres;User Id=postgres;Password=postgres;" \
-  "v2"
+# Build the image
+docker build -f ExportUtil.Dockerfile -t pathfinder2-export-util:latest .
+
+# ########################################### # 
+# Define your out path and connection string  #
+# ########################################### #
+OUTPUT_DIR="/home/user"
+OUTPUT_FILENAME="pathfinder-db.bin"
+INDEXER_DB_CONNECTION_STRING="Server=localhost;Port=5432;Database=postgres;User Id=postgres;Password=postgres;"
+CIRCLES_VERSION="v2"
+
+# Run the ExportUtil to dump the index db data to a file
+docker run --rm \
+  -v ${OUTPUT_DIR}:/output \
+  --network host \
+  pathfinder2-export-util:latest \
+  "/output/${OUTPUT_FILENAME}" \
+  "${INDEXER_DB_CONNECTION_STRING}" \
+  "${CIRCLES_VERSION}"
 ```
 
-The first argument is the output path for the binary dump file, the second argument is the connection string to the
-index db and the third argument is the Circles version.
-
-You can then use the resulting file to initialize a pathfinder2 instance:
+You can then use the resulting file (at "${OUTPUT_DIR}/${OUTPUT_FILENAME}") to initialize a pathfinder2 instance:
 
 ```shell
 curl -X POST \
@@ -87,7 +99,7 @@ curl -X POST \
         "file": "/home/user/pathfinder-db.bin"
     }
 }' \
-  "http://<ip>:<port>"
+  "http://localhost:8080"
 ```
 
 ## File format
