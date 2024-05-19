@@ -101,9 +101,8 @@ public static class Program
 
             await Logger.Call("Find block number", async () =>
             {
-                _currentBlock = await Block.FindByTransactionHash(
+                _currentBlock = await Block.FindLatestBlockNumber(
                     _config.IndexerDbConnectionString,
-                    transactionHashes[0],
                     _queries);
 
                 Logger.Log($"Block No.: {_currentBlock}");

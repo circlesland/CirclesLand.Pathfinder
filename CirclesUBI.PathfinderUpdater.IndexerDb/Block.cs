@@ -4,7 +4,7 @@ namespace CirclesUBI.PathfinderUpdater;
 
 public static class Block
 {
-    public static async Task<long> FindByTransactionHash(string connectionString, string transactionHash, Queries queries)
+    public static async Task<long> FindLatestBlockNumber(string connectionString, Queries queries)
     {
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();

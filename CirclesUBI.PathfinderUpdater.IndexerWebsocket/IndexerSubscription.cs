@@ -4,23 +4,16 @@ using Newtonsoft.Json;
 
 namespace CirclesUBI.PathfinderUpdater.Indexer;
 
-public class IndexerSubscription : IDisposable
+public class IndexerSubscription(string indexerUrl) : IDisposable
 {
-    private readonly ClientWebSocket _clientWebSocket;
-    private readonly string _indexerUrl;
+    private readonly ClientWebSocket _clientWebSocket = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
     public event EventHandler<IndexerSubscriptionEventArgs>? SubscriptionEvent;
 
-    public IndexerSubscription(string indexerUrl)
-    {
-        _clientWebSocket = new ClientWebSocket();
-        _indexerUrl = indexerUrl;
-    }
-
     public async Task Stop()
     {
-        _cancellationTokenSource.Cancel();
+        await _cancellationTokenSource.CancelAsync();
         await _clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Goodbye", CancellationToken.None);
     }
 
@@ -28,7 +21,7 @@ public class IndexerSubscription : IDisposable
     {
         try
         {
-            await _clientWebSocket.ConnectAsync(new Uri(_indexerUrl), _cancellationTokenSource.Token);
+            await _clientWebSocket.ConnectAsync(new Uri(indexerUrl), _cancellationTokenSource.Token);
 
             while (_clientWebSocket.State == WebSocketState.Open && !_cancellationTokenSource.IsCancellationRequested)
             {
