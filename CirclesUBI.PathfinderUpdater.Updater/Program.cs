@@ -35,7 +35,8 @@ public static class Program
         _queries = new Queries(_config.CirclesVersion);
         _pathfinderRpc = new RpcEndpoint(_config.PathfinderUrl);
 
-        _indexerSubscription = new IndexerSubscription(_config.IndexerWebsocketUrl);
+        _indexerSubscription =
+            new IndexerSubscription(_config.IndexerWebsocketUrl, _config.CirclesVersion == "v2" ? 2 : 1);
         _indexerSubscription.SubscriptionEvent += OnIndexerSubscriptionEvent;
 
         await _indexerSubscription.Run();
