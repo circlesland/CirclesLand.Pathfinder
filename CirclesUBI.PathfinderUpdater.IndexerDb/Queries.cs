@@ -39,9 +39,9 @@ public class Queries
     ";
 
     public string LatestBlockNumber => _version == "v1" ? V1LatestBlockNumber : V2LatestBlockNumber;
-
+    
     public const string V1LatestBlockNumber = "select max(block_number) from transaction_2;";
-
+    
     public const string V2LatestBlockNumber = "select max(\"blockNumber\") from \"System_Block\";";
 
     public const string V2TrustEdges = @"
@@ -70,61 +70,9 @@ public class Queries
     order by ""blockNumber"" desc, ""transactionIndex"" desc, ""logIndex"" desc;
     ";
 
-    // TODO: Use the Discounted event from 0.3.4 to get precise demurraged balances
     public const string V2BalancesByAccountAndToken = @"
-    with ""transfers"" as (select ""blockNumber"",
-                      ""timestamp"",
-                      ""transactionIndex"",
-                      ""logIndex"",
-                      0 as ""batchIndex"",
-                      ""transactionHash"",
-                      ""operator"",
-                      ""from"",
-                      ""to"",
-                      ""id"",
-                      ""value""
-               from ""CrcV2_TransferSingle""
-               union all
-               select ""blockNumber"",
-                      ""timestamp"",
-                      ""transactionIndex"",
-                      ""logIndex"",
-                      ""batchIndex"",
-                      ""transactionHash"",
-                      ""operator"",
-                      ""from"",
-                      ""to"",
-                      ""id"",
-                      ""value""
-               from ""CrcV2_TransferBatch""),
-    ""orderedTransfers"" as (
-        select ""blockNumber"",
-               ""timestamp"",
-               ""transactionIndex"",
-               ""logIndex"",
-               ""batchIndex"",
-               ""transactionHash"",
-               ""operator"",
-               ""from"",
-               ""to"",
-               ""id"",
-               ""value""
-        from ""transfers""
-        order by ""blockNumber"", ""transactionIndex"", ""logIndex"", ""batchIndex""   
-    )
-    select ""to"" as account, id::text as token_id, sum(value)::text as total_balance
-    from ""orderedTransfers""
-    left join ""CrcV2_RegisterHuman"" hum on hum.avatar = ""to""
-    left join ""CrcV2_InviteHuman"" hum2 on hum2.invited = ""to""
-    left join ""CrcV2_RegisterOrganization"" org on org.""organization"" = ""to""
-    left join ""CrcV2_RegisterGroup"" grp on grp.""group"" = ""to""
-       where ""to"" != '0x0000000000000000000000000000000000000000'
-         and (hum.avatar is not null 
-              or hum2.invited is not null 
-              or org.organization is not null 
-              or grp.group is not null) 
-    group by ""to"", id
-    having sum(value) > 0;
+           select account, ""tokenId"" as token_id, ""demurragedTotalBalance"" as total_balance
+           from ""V_CrcV2_BalancesByAccountAndToken""; 
     ";
 
 
