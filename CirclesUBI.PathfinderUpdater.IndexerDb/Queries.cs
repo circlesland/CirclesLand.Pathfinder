@@ -39,9 +39,9 @@ public class Queries
     ";
 
     public string LatestBlockNumber => _version == "v1" ? V1LatestBlockNumber : V2LatestBlockNumber;
-    
+
     public const string V1LatestBlockNumber = "select max(block_number) from transaction_2;";
-    
+
     public const string V2LatestBlockNumber = "select max(\"blockNumber\") from \"System_Block\";";
 
     public const string V2TrustEdges = @"
@@ -70,45 +70,46 @@ public class Queries
     order by ""blockNumber"" desc, ""transactionIndex"" desc, ""logIndex"" desc;
     ";
 
+    // TODO: Use the Discounted event from 0.3.4 to get precise demurraged balances
     public const string V2BalancesByAccountAndToken = @"
     with ""transfers"" as (select ""blockNumber"",
-                      timestamp,
+                      ""timestamp"",
                       ""transactionIndex"",
                       ""logIndex"",
                       0 as ""batchIndex"",
                       ""transactionHash"",
-                      operator,
+                      ""operator"",
                       ""from"",
                       ""to"",
-                      id,
-                      value
+                      ""id"",
+                      ""value""
                from ""CrcV2_TransferSingle""
                union all
                select ""blockNumber"",
-                      timestamp,
+                      ""timestamp"",
                       ""transactionIndex"",
                       ""logIndex"",
                       ""batchIndex"",
                       ""transactionHash"",
-                      ""operatorAddress"",
-                      ""fromAddress"",
-                      ""toAddress"",
-                      id,
-                      value
+                      ""operator"",
+                      ""from"",
+                      ""to"",
+                      ""id"",
+                      ""value""
                from ""CrcV2_TransferBatch""),
     ""orderedTransfers"" as (
         select ""blockNumber"",
-               timestamp,
+               ""timestamp"",
                ""transactionIndex"",
                ""logIndex"",
                ""batchIndex"",
                ""transactionHash"",
-               operator,
+               ""operator"",
                ""from"",
                ""to"",
-               id,
-               value
-        from transfers
+               ""id"",
+               ""value""
+        from ""transfers""
         order by ""blockNumber"", ""transactionIndex"", ""logIndex"", ""batchIndex""   
     )
     select ""to"" as account, id::text as token_id, sum(value)::text as total_balance

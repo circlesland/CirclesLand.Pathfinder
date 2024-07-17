@@ -80,8 +80,7 @@ public class Config
         {
             // Configured via env-vars?
             config = new Config(
-                Environment.GetEnvironmentVariable("CIRCLES_VERSION") ??
-                throw new Exception("A CIRCLES_VERSION must be set.")
+                Environment.GetEnvironmentVariable("CIRCLES_VERSION") ?? throw new Exception("A CIRCLES_VERSION must be set.")
                 , Environment.GetEnvironmentVariable("INDEXER_DB_CONNECTION_STRING") ?? ""
                 , Environment.GetEnvironmentVariable("INDEXER_WS_URL") ?? ""
                 , Environment.GetEnvironmentVariable("INTERNAL_CAPACITY_GRAPH_PATH") ?? ""

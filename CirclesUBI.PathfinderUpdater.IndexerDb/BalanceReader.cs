@@ -34,6 +34,22 @@ public class BalanceReader : IDisposable
         return CreateBalanceReader(capacityReader, version);
     }
 
+    private static BigInteger ParsePgBigInt(string str)
+    {
+        var decimalPointIndex = str.IndexOf(".", StringComparison.Ordinal);
+        if (decimalPointIndex > -1)
+        {
+            str = str.Substring(0, decimalPointIndex);
+        }
+
+        if (!BigInteger.TryParse(str, out var capacityBigInteger))
+        {
+            throw new Exception($"Couldn't parse string {str} as BigInteger value.");
+        }
+
+        return capacityBigInteger;
+    }
+
     private IEnumerable<Balance> CreateBalanceReader(NpgsqlDataReader capacityReader, string version)
     {
         while (true)
@@ -46,7 +62,7 @@ public class BalanceReader : IDisposable
 
             var safeAddress = capacityReader.GetString(0).Substring(2);
             var balance = capacityReader.GetString(2);
-            var balanceBn = CapacityEdgeReader.ParsePgBigInt(balance);
+            var balanceBn = ParsePgBigInt(balance);
             string tokenOwnerAddress = "";
             if (version == "v1")
             {
