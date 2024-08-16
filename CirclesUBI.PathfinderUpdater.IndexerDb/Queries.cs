@@ -71,7 +71,7 @@ public class Queries
     ";
 
     public const string V2BalancesByAccountAndToken = @"
-           select account, ""tokenId"" as token_id, ""demurragedTotalBalance"" as total_balance
+           select account, ""tokenId"" as token_id, ""demurragedTotalBalance""::text as total_balance
            from ""V_CrcV2_BalancesByAccountAndToken""; 
     ";
 
@@ -91,76 +91,4 @@ public class Queries
     select ""user"", ""token""
     from all_signups;
     ";
-
-
-    public static string V2BlockByTransactionHash(string txHash)
-    {
-        if (!System.Text.RegularExpressions.Regex.IsMatch(txHash, "0x[0-9a-fA-F]{64}"))
-        {
-            throw new ArgumentException("Invalid transaction hash format.");
-        }
-
-        return $@"
-        with all_indexed_txs as (
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_RegisterHuman""
-               union all
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_InviteHuman""
-               union all
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_RegisterOrganization""
-               union all
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_RegisterGroup""
-               union all
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_TransferSingle""
-               union all
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_TransferBatch""
-               union all
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_Trust""
-               union all
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_ApprovalForAll""
-               union all
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_DiscountCost""
-               union all
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_PersonalMint""
-               union all
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_RegisterShortName""
-               union all
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_Stopped""
-               union all
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_UpdateMetadataDigest""
-               union all
-               select ""blockNumber"",
-                      ""transactionHash""
-               from ""CrcV2_URI""
-           )
-           select distinct *
-           from all_indexed_txs
-           where ""transactionHash"" = '{txHash}';
-           ";
-    }
 }
