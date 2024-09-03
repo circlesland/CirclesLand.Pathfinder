@@ -44,6 +44,7 @@ public class Queries
     
     public const string V2LatestBlockNumber = "select max(\"blockNumber\") from \"System_Block\";";
 
+    // TODO: Exclude trust edges to accounts that aren't signed up yet
     public const string V2TrustEdges = @"
     -- Get a snapshot of all active (v2) trust relations:
     --
@@ -51,31 +52,35 @@ public class Queries
     -- * Only the latest event (""blockNumber"" desc, ""transactionIndex"" desc, ""logIndex"" desc) per 'truster', 'trustee' pair is relevant
     -- * If the 'expiryTime' of the latest event for a pair is '""expiryTime"" > (select max(""timestamp"") from ""System_Block"")' then
     --   the trust relation must be omitted from the result
-    select trustee as ""user"",
-           truster as ""can_send_to"",
-           100 as ""limit""
-    from (
-             select ""blockNumber"",
-                    timestamp,
-                    ""transactionIndex"",
-                    ""logIndex"",
-                    truster,
-                    trustee,
-                    ""expiryTime"",
-                    row_number() over (partition by truster, trustee order by ""blockNumber"" desc, ""transactionIndex"" desc, ""logIndex"" desc) as rn
-             from ""CrcV2_Trust""
-         ) t
-    where rn = 1
-    and ""expiryTime"" > (select max(""timestamp"") from ""System_Block"")
-    order by ""blockNumber"" desc, ""transactionIndex"" desc, ""logIndex"" desc;
+    with ""trustRelations"" as (select trustee as ""user"",
+                                   truster as ""can_send_to"",
+                                   100     as ""limit""
+                            from (select ""blockNumber"",
+                                         timestamp,
+                                         ""transactionIndex"",
+                                         ""logIndex"",
+                                         truster,
+                                         trustee,
+                                         ""expiryTime"",
+                                         row_number()
+                                         over (partition by truster, trustee order by ""blockNumber"" desc, ""transactionIndex"" desc, ""logIndex"" desc) as rn
+                                  from ""CrcV2_Trust"") t
+                            where rn = 1
+                              and ""expiryTime"" > (select max(""timestamp"") from ""System_Block"")
+                            order by ""blockNumber"" desc, ""transactionIndex"" desc, ""logIndex"" desc
+    )
+    select ""user"",
+           can_send_to,
+           ""limit""
+    from ""trustRelations""
+    join ""CrcV2_RegisterHuman"" hum on hum.avatar = ""trustRelations"".""user"";
     ";
 
     public const string V2BalancesByAccountAndToken = @"
            select account, ""tokenId"" as token_id, ""demurragedTotalBalance""::text as total_balance
            from ""V_CrcV2_BalancesByAccountAndToken""; 
     ";
-
-
+    
     public const string V2Accounts = @"
     with all_signups as (select avatar ""user"", avatar ""token""
                      from ""CrcV2_RegisterHuman""
