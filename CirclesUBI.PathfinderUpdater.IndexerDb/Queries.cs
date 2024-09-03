@@ -73,7 +73,7 @@ public class Queries
            can_send_to,
            ""limit""
     from ""trustRelations""
-    join ""CrcV2_RegisterHuman"" hum on hum.avatar = ""trustRelations"".""user"";
+    join ""V_CrcV2_Avatars"" a on a.avatar = ""trustRelations"".""user"";
     ";
 
     public const string V2BalancesByAccountAndToken = @"
