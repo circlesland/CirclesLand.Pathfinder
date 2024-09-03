@@ -79,9 +79,6 @@ public class Queries
     with all_signups as (select avatar ""user"", avatar ""token""
                      from ""CrcV2_RegisterHuman""
                      union all
-                     select invited ""user"", invited ""token""
-                     from ""CrcV2_InviteHuman""
-                     union all
                      select organization as ""user"", null as ""token""
                      from ""CrcV2_RegisterOrganization""
                      union all

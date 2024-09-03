@@ -64,7 +64,10 @@ public static class Program
         var trustReader = await t.ReadTrustEdges();
         uint edgeCounter = 0;
         // Console.WriteLine($"Writing trusts ..");
+        
+        // Write a placeholder 4 byte uint to be replaced by the actual count later
         trustsFile.Write(BitConverter.GetBytes((uint)BinaryPrimitives.ReverseEndianness(0)));
+        
         // Console.WriteLine($" * UserAddress -> CanSendToAddress (Limit)");
         foreach (var trustEdge in trustReader)
         {
