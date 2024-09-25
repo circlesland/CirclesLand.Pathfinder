@@ -39,6 +39,12 @@ public static class Program
             new IndexerSubscription(_config.IndexerWebsocketUrl, _config.CirclesVersion == "v2" ? 2 : 1);
         _indexerSubscription.SubscriptionEvent += OnIndexerSubscriptionEvent;
 
+        // Start periodic full updates every minute when on v2
+        if (_config.CirclesVersion == "v2")
+        {
+            Task.Run(StartPeriodicUpdate);
+        }
+
         await _indexerSubscription.Run();
     }
 
@@ -100,16 +106,21 @@ public static class Program
         {
             _blockUpdateHealth.KeepAlive();
 
-            await Logger.Call("Find block number", async () =>
-            {
-                _currentBlock = await Block.FindLatestBlockNumber(
-                    _config.IndexerDbConnectionString,
-                    _queries);
-
-                Logger.Log($"Block No.: {_currentBlock}");
-            });
+            await UpdateCurrentBlock();
 
             await UpdatePathfinder();
+        });
+    }
+
+    private static async Task UpdateCurrentBlock()
+    {
+        await Logger.Call("Find block number", async () =>
+        {
+            _currentBlock = await Block.FindLatestBlockNumber(
+                _config.IndexerDbConnectionString,
+                _queries);
+
+            Logger.Log($"Block No.: {_currentBlock}");
         });
     }
 
@@ -140,6 +151,28 @@ public static class Program
 
             Logger.Log($"Pathfinder2 initialized up to block {_lastFullUpdate}");
         });
+    }
+
+    private static async Task StartPeriodicUpdate()
+    {
+        while (true)
+        {
+            await Task.Delay(TimeSpan.FromMinutes(1));
+
+            if (Interlocked.CompareExchange(ref _isWorking, 1, 0) != 0)
+            {
+                Logger.Log($"Still working. Ignore the periodic update.");
+                continue;
+            }
+
+            await Logger.Call("Periodic UpdatePathfinder", async () =>
+            {
+                await UpdateCurrentBlock();
+                await UpdatePathfinder();
+            });
+
+            Interlocked.Exchange(ref _isWorking, 0);
+        }
     }
 
     private static void OnReorgOccurred()
